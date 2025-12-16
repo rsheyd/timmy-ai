@@ -9,9 +9,17 @@ import SwiftUI
 
 @main
 struct timmy_aiApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        MenuBarExtra("Timmy", systemImage: "message") {
+            Button("Toggle Chat") {
+                appDelegate.toggleChat()
+            }
+            Divider()
+            Button("Quit") {
+                NSApp.terminate(nil)
+            }
         }
     }
 }
