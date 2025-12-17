@@ -3,18 +3,7 @@ My little AI assistant. Can see and interact with my mac screen and windows.
 
 First phase? See a window and can type in it. An ephemeral window for chatting with Timmy. Use ephemeral chat window to ask Timmy to check my nobs todo spreadsheet that's open in chrome and tell me what I should work on next.
 
-# Dec 16, 2025
-
-## What you did today
-
-* Implemented a global macOS hotkey (**Option + Space**) using Carbon’s `RegisterEventHotKey`.
-* Fixed a type mismatch by casting Carbon constants to `UInt32`, enabling successful compilation.
-* Wired the hotkey to toggle a floating chat window via `AppDelegate.toggleChat()`.
-* Ensured proper setup and teardown of the hotkey and event handler during app launch and termination.
-
----
-
-## File-by-file summary and interactions
+# Files
 
 ### AppDelegate.swift
 
@@ -34,7 +23,6 @@ App lifecycle coordinator and global hotkey manager.
 * Receives launch/terminate hooks through `NSApplicationDelegate`.
 * Referenced by `timmy_aiApp` via `@NSApplicationDelegateAdaptor`.
 
----
 
 ### ChatWindowController.swift
 
@@ -54,7 +42,6 @@ Manages the chat window (an `NSWindowController` wrapping SwiftUI content).
 * Called by `AppDelegate.toggleChat()` to show/hide the window.
 * Embeds `ChatView` as the window’s content.
 
----
 
 ### ChatView.swift
 
@@ -73,7 +60,7 @@ The SwiftUI UI for the chat interface.
 * Embedded in `ChatWindowController` and presented in the floating window.
 * Self-contained UI; no direct coupling to the app delegate or menu bar.
 
----
+
 
 ### timmy_aiApp.swift
 
@@ -93,7 +80,6 @@ App entry point using SwiftUI’s `App` protocol.
 * Bridges the SwiftUI app model with the AppKit-based `AppDelegate`.
 * Provides an alternative UI path to toggle the chat window from the menu bar.
 
----
 
 ## How everything works together
 
@@ -117,12 +103,3 @@ App entry point using SwiftUI’s `App` protocol.
 **App quit**
 
 * `AppDelegate.applicationWillTerminate` unregisters the hotkey and removes the event handler.
-
----
-
-## Suggestions and next steps (optional)
-
-* Persist window position and visibility between launches.
-* Add preferences for customizing the hotkey (e.g. **Command + Option + Space**).
-* Replace the placeholder Timmy response in `ChatView` with real assistant logic.
-* Add a menu bar status indicator reflecting chat window visibility.
