@@ -31,15 +31,43 @@ struct ChatView: View {
     }
 
     private func send() {
-        guard !input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
         let user = "You: \(input)"
         messages.append(user)
-        // Placeholder response:
+
+        // Try to handle as a command. If handled, don't append the placeholder.
+        if handleCommand(trimmed) {
+            input = ""
+            return
+        }
+
+        // Default placeholder response for non-command messages.
         messages.append("Timmy: Got it. I’ll help you with that next.")
         input = ""
+    }
+
+    private func handleCommand(_ text: String) -> Bool {
+        let lower = text.lowercased()
+
+        // Command: explicitly prompt for Accessibility permission (no-op now)
+        if lower.contains("grant accessibility") || lower == "grant" {
+            messages.append("Timmy: I no longer need Accessibility permission. Window counting has been removed.")
+            return true
+        }
+
+        // Command: count windows across all apps (removed)
+        if lower.contains("count windows") || lower.contains("how many windows") {
+            messages.append("Timmy: I don't count windows anymore. If you need this back, let me know and I can re-enable it.")
+            return true
+        }
+
+        return false
     }
 }
 
 #Preview {
     ChatView()
 }
+
