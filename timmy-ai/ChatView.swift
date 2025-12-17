@@ -4,6 +4,7 @@ struct ChatView: View {
     @ObservedObject var context: ContextModel
     @State private var input = ""
     @State private var messages: [String] = ["Hi, I’m Timmy. What should we focus on?"]
+    let aiClient: AIClient = MockAIClient()
 
     var body: some View {
         VStack(spacing: 8) {
@@ -44,25 +45,72 @@ struct ChatView: View {
     }
 
     private func send() {
-        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        let text = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return }
 
-        let user = "You: \(input)"
-        messages.append(user)
-
-        // Try to handle as a command. If handled, don't append the placeholder.
-        if handleCommand(trimmed) {
-            input = ""
-            return
-        }
-
-        // Default placeholder response for non-command messages.
-        messages.append("Timmy: Got it. I’ll help you with that next.")
+        messages.append("You: \(text)")
         input = ""
+
+        // If it’s a local command, handle it and stop
+        if handleCommand(text) { return }
+
+        // placeholder assistant message we’ll stream into
+        messages.append("Timmy: ")
+        let assistantIndex = messages.count - 1
+
+        Task { @MainActor in
+            let toolRouter = ToolRouter(contextModel: context, memoryStore: MemoryStore())
+
+            @MainActor
+            func streamOnce(toolResult: String?) async throws {
+                var buffer = messages[assistantIndex]
+
+                for try await event in aiClient.streamReply(to: text, toolResult: toolResult) {
+                    switch event {
+                    case .textDelta(let d):
+                        buffer += d
+                        messages[assistantIndex] = buffer
+
+                    case .toolCall(let call):
+                        let result = toolRouter.run(call)
+                        messages.append("— tool \(call.name) → \(result)")
+                        try await streamOnce(toolResult: result)
+                        return
+
+                    case .done:
+                        return
+                    }
+                }
+            }
+
+            do {
+                try await streamOnce(toolResult: nil)
+            } catch {
+                messages[assistantIndex] = "Timmy: (error) \(error.localizedDescription)"
+            }
+        }
     }
+
 
     private func handleCommand(_ text: String) -> Bool {
         let lower = text.lowercased()
+        
+        if lower == "memories" || lower.contains("show memories") {
+            let store = MemoryStore()
+            let items = store.all(limit: 10)
+
+            if items.isEmpty {
+                messages.append("Timmy: No memories saved yet.")
+            } else {
+                var text = "Timmy: Recent memories:\n"
+                for m in items {
+                    let tags = m.tags.isEmpty ? "" : " [\(m.tags.joined(separator: ", "))]"
+                    text += "• \(m.text)\(tags)\n"
+                }
+                messages.append(text)
+            }
+            return true
+        }
         
         if lower == "context" || lower.contains("show context") {
             if let snapshot = context.snapshot {
