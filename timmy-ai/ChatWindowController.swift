@@ -2,11 +2,16 @@ import AppKit
 import SwiftUI
 
 final class ChatWindowController: NSWindowController {
+    private let contextModel: ContextModel
     private var hosting: NSHostingView<ChatView>?
 
+    override init(window: NSWindow?) {
+        // Fallback init to satisfy NSWindowController's designated initializer
+        self.contextModel = ContextModel()
+        super.init(window: window)
+    }
+
     convenience init() {
-        let contentView = ChatView()
-        let hosting = NSHostingView(rootView: contentView)
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 420, height: 520),
             styleMask: [.titled, .fullSizeContentView, .closable],
@@ -18,16 +23,24 @@ final class ChatWindowController: NSWindowController {
         window.isMovableByWindowBackground = true
         window.level = .floating
         window.isReleasedWhenClosed = false
-        window.contentView = hosting
 
         self.init(window: window)
+
+        let contentView = ChatView(context: self.contextModel)
+        let hosting = NSHostingView(rootView: contentView)
+        window.contentView = hosting
         self.hosting = hosting
+    }
+
+    required init?(coder: NSCoder) {
+        self.contextModel = ContextModel()
+        super.init(coder: coder)
     }
     
     // MARK: - Context injection
 
     func setContextSnapshot(_ snapshot: ContextSnapshot?) {
-        hosting?.rootView.contextSnapshot = snapshot
+        contextModel.snapshot = snapshot
     }
     
     // MARK: - Presentation

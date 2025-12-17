@@ -1,14 +1,14 @@
 import SwiftUI
 
 struct ChatView: View {
-    @State var contextSnapshot: ContextSnapshot? = nil
+    @ObservedObject var context: ContextModel
     @State private var input = ""
     @State private var messages: [String] = ["Hi, I’m Timmy. What should we focus on?"]
 
     var body: some View {
         VStack(spacing: 8) {
             // Optional: show current context at the top (dev-friendly)
-            if let snapshot = contextSnapshot {
+            if let snapshot = context.snapshot {
                 Text(snapshot.asContextBlock(maxWindows: 10, maxCounts: 6))
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -65,7 +65,7 @@ struct ChatView: View {
         let lower = text.lowercased()
         
         if lower == "context" || lower.contains("show context") {
-                    if let snapshot = contextSnapshot {
+            if let snapshot = context.snapshot {
                         messages.append("Timmy:\n" + snapshot.asContextBlock(maxWindows: 25, maxCounts: 10))
                     } else {
                         messages.append("Timmy: No context snapshot yet (try toggling the chat again).")
@@ -75,7 +75,7 @@ struct ChatView: View {
 
         // Command: count number of windows open
         if lower.contains("count windows") || lower.contains("how many windows") {
-                    let n = contextSnapshot?.topWindows.count ?? 0
+            let n = context.snapshot?.topWindows.count ?? 0
                     messages.append("Timmy: I see \(n) window(s) in the current snapshot.")
                     return true
                 }
@@ -85,6 +85,6 @@ struct ChatView: View {
 }
 
 #Preview {
-    ChatView()
+    ChatView(context: ContextModel())
 }
 
