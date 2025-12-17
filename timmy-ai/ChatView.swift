@@ -1,11 +1,23 @@
 import SwiftUI
 
 struct ChatView: View {
+    @State var contextSnapshot: ContextSnapshot? = nil
     @State private var input = ""
     @State private var messages: [String] = ["Hi, I’m Timmy. What should we focus on?"]
 
     var body: some View {
         VStack(spacing: 8) {
+            // Optional: show current context at the top (dev-friendly)
+            if let snapshot = contextSnapshot {
+                Text(snapshot.asContextBlock(maxWindows: 10, maxCounts: 6))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    .lineLimit(6)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(messages.indices, id: \ .self) { idx in
@@ -18,6 +30,7 @@ struct ChatView: View {
                 }
                 .padding()
             }
+            
             HStack {
                 TextField("Type to Timmy…", text: $input, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
@@ -50,18 +63,22 @@ struct ChatView: View {
 
     private func handleCommand(_ text: String) -> Bool {
         let lower = text.lowercased()
+        
+        if lower == "context" || lower.contains("show context") {
+                    if let snapshot = contextSnapshot {
+                        messages.append("Timmy:\n" + snapshot.asContextBlock(maxWindows: 25, maxCounts: 10))
+                    } else {
+                        messages.append("Timmy: No context snapshot yet (try toggling the chat again).")
+                    }
+                    return true
+                }
 
-        // Command: explicitly prompt for Accessibility permission (no-op now)
-        if lower.contains("grant accessibility") || lower == "grant" {
-            messages.append("Timmy: I no longer need Accessibility permission. Window counting has been removed.")
-            return true
-        }
-
-        // Command: count windows across all apps (removed)
+        // Command: count number of windows open
         if lower.contains("count windows") || lower.contains("how many windows") {
-            messages.append("Timmy: I don't count windows anymore. If you need this back, let me know and I can re-enable it.")
-            return true
-        }
+                    let n = contextSnapshot?.topWindows.count ?? 0
+                    messages.append("Timmy: I see \(n) window(s) in the current snapshot.")
+                    return true
+                }
 
         return false
     }

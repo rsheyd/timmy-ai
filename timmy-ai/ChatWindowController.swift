@@ -23,6 +23,14 @@ final class ChatWindowController: NSWindowController {
         self.init(window: window)
         self.hosting = hosting
     }
+    
+    // MARK: - Context injection
+
+    func setContextSnapshot(_ snapshot: ContextSnapshot?) {
+        hosting?.rootView.contextSnapshot = snapshot
+    }
+    
+    // MARK: - Presentation
 
     func present() {
         guard let window = self.window else { return }

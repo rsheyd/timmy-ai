@@ -6,15 +6,27 @@ private var eventHandlerRef: EventHandlerRef?
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var chatWC: ChatWindowController?
+    private let contextCapture = ContextCaptureService()
+    private var contextSnapshot: ContextSnapshot?
+
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         chatWC = ChatWindowController()
+        
+        // Optional: prompt early for AX if you want frontmost window title via AX later.
+                // If you don't want this prompt, remove these 2 lines.
+//                let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as NSString: true]
+//                _ = AXIsProcessTrustedWithOptions(options)
+        
         registerGlobalHotKey()
         // Uncomment to show on launch:
         // chatWC?.present()
     }
 
     @objc func toggleChat() {
+        contextSnapshot = contextCapture.capture(topN: 25)
+        chatWC?.setContextSnapshot(contextSnapshot)
+        
         guard let chatWC = chatWC else { return }
         if chatWC.window?.isVisible == true {
             chatWC.hide()
